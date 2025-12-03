@@ -14,8 +14,7 @@ Dark Web Hunter is a Python-based desktop application that enables users to perf
 - Minimal dark-themed GUI built with `tkinter`
 
 ## 🖼️ Preview
-
-![logo](abc.jpeg)
+<img width="1135" height="691" alt="Screenshot 2025-12-03 192713" src="https://github.com/user-attachments/assets/429fb665-765a-459a-8d63-601cecd9994a" />
 
 ## 🔧 Installation
 
