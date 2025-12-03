@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fingerprint Scanning</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap'); /* Techno-like font */
+
+        body {
+            min-height: 100vh;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            margin: 0;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .thumb-container {
+            text-align: center;
+        }
+
+        .thumb {
+            position: relative;
+            background: url('/images/thumb.svg') no-repeat center center;
+            background-size: 200px 200px;
+            height: 200px;
+            width: 200px;
+            margin-bottom: 20px;
+            animation: pulseThumb 3s ease-in-out infinite;
+            left: 45px; /* Adjusted to move the SVG further to the right */
+        }
+
+        @keyframes pulseThumb {
+            0%, 100% {
+                filter: brightness(1); /* Normal brightness (white) */
+            }
+            50% {
+                filter: brightness(2) hue-rotate(180deg); /* Transition to cyan */
+            }
+        }
+
+        .thumb::after {
+            position: absolute;
+            content: '';
+            height: 10px;
+            background-color: #02fafc;
+            width: 100%;
+            border-radius: 8px;
+            top: 0;
+            left: 0;
+            animation: line 3s ease-in-out infinite;
+        }
+
+        @keyframes line {
+            0%, 100% {
+                top: 0;
+            }
+            50% {
+                top: 190px;
+            }
+        }
+
+        .thumb::before {
+            position: absolute;
+            content: '';
+            background: url('/images/thumbscan.svg') no-repeat center center;
+            background-size: 200px 200px;
+            height: 200px;
+            width: 200px;
+            top: 0;
+            left: 0;
+            animation: pulseScan 3s ease-in-out infinite;
+        }
+
+        @keyframes pulseScan {
+            0%, 100% {
+                opacity: 0.8;
+                filter: brightness(1);
+            }
+            50% {
+                opacity: 1;
+                filter: brightness(2) hue-rotate(180deg); /* Transition to cyan during scan */
+            }
+        }
+
+        .text {
+            color: #02fafc;
+            font-size: 28px;
+            padding: 5px;
+            text-align: center;
+            animation: blink 1.5s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes blink {
+            0%, 100% {
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 20px;
+            font-size: 18px;
+            border: 1px solid #02fafc;
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+
+        nav a:hover {
+            background-color: #02fafc;
+            color: black;
+            transition: 0.3s;
+        }
+
+        .centered-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+
+   <div class="centered-container">
+        <div class="thumb-container">
+            <div class="thumb"></div>
+            <div class="text">THIRD EYE</div>
+            <nav>
+                <a href="/auth/login">Login</a>
+                <a href="/auth/register">Register</a>
+            </nav>
+        </div>
+   </div>
+
+</body>
+</html>

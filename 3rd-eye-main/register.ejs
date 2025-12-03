@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.5">
+    <title><%= title %></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url("/images/Register.jpg");
+            background-size: 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-form {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            width: 300px;
+        }
+
+        .login-form h2 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        .login-form input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .login-form input[type="submit"] {
+            background-color: #ff4081;
+            color: white;
+            cursor: pointer;
+        }
+
+        .login-form input[type="submit"]:hover {
+            background-color: #e91e63;
+        }
+
+        .login-form p {
+            text-align: center;
+            color: #fff;
+        }
+
+        .error {
+            color: red;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-form">
+    <h2>Register</h2>
+    <form id="registerForm" action="/auth/register" method="POST">
+        <input type="text" name="username" placeholder="Username" required />
+        <input type="password" name="password" id="password" placeholder="Password" required />
+        <input type="submit" value="Register" />
+    </form>
+    <% if (message) { %>
+        <p><%= message %></p>
+    <% } %>
+    <p id="error" class="error"></p>
+</div>
+
+<script>
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+        const password = document.getElementById('password').value;
+        const errorElement = document.getElementById('error');
+
+        if (password.length < 8) {
+            e.preventDefault(); // Prevent form submission
+            errorElement.textContent = 'Password must be at least 8 characters long.';
+        } else {
+            errorElement.textContent = ''; // Clear error message
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= criminal.name %> Information</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Orbitron', sans-serif;
+            background-color: #0d0f12;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            position: relative;
+            color: white;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .container {
+            position: relative;
+            width: 850px;
+            background-color: #1b1f24;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3), 0 0 50px rgba(0, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            z-index: 1;
+        }
+
+        .image-container {
+            position: relative;
+            width: 45%;
+        }
+
+        .image-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+            border: 2px solid #0a0f12;
+            filter: grayscale(100%);
+        }
+
+        .confidential-stamp {
+            position: absolute;
+            top: 70%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-10deg);
+            color: red;
+            font-size: 3em;
+            font-weight: bold;
+            opacity: 0.85;
+            text-transform: uppercase;
+            border: 3px solid red;
+            padding: 10px 20px;
+            background: rgba(255, 0, 0, 0.2);
+            letter-spacing: 4px;
+        }
+
+        .details-container {
+            width: 55%;
+            padding-left: 20px;
+        }
+
+        .highlight-box {
+            background-color: rgba(0, 150, 255, 0.1);
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3), 0 0 30px rgba(0, 150, 255, 0.2);
+        }
+
+        /* Glitch Effect */
+        h1 {
+            position: relative;
+            font-size: 2.5em;
+            color: #78c3d7;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #52585f;
+            padding-bottom: 10px;
+            overflow: hidden;
+            text-transform: uppercase;
+        }
+
+        h1::before, h1::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            z-index: -1;
+            animation: glitch 1.5s infinite;
+        }
+
+        h1::before {
+            left: 2px;
+            text-shadow: -2px 0 red;
+            clip: rect(24px, 550px, 90px, 0);
+            animation: glitchTop 3s infinite linear alternate-reverse;
+        }
+
+        h1::after {
+            left: -2px;
+            text-shadow: -2px 0 blue;
+            clip: rect(85px, 550px, 140px, 0);
+            animation: glitchBottom 2s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-4px, -2px); }
+            60% { transform: translate(2px, 0); }
+            80% { transform: translate(-2px, 4px); }
+            100% { transform: translate(0); }
+        }
+
+        @keyframes glitchTop {
+            0% { clip: rect(24px, 9999px, 90px, 0); }
+            50% { clip: rect(0px, 9999px, 90px, 0); }
+            100% { clip: rect(85px, 9999px, 140px, 0); }
+        }
+
+        @keyframes glitchBottom {
+            0% { clip: rect(85px, 9999px, 140px, 0); }
+            50% { clip: rect(40px, 9999px, 100px, 0); }
+            100% { clip: rect(24px, 9999px, 90px, 0); }
+        }
+
+        .details p {
+            font-size: 1.3em;
+            line-height: 1.5;
+            margin: 10px 0;
+            letter-spacing: 1px;
+            color: #ffffff;
+            text-shadow: 0 0 5px rgba(0, 255, 255, 0.5), 0 0 10px rgba(0, 255, 255, 0.3);
+        }
+
+        .details span {
+            font-weight: bold;
+            color: #00ffff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Matrix Canvas for visual effects -->
+    <canvas id="matrix"></canvas>
+
+    <div class="container">
+        <div class="image-container">
+            <!-- Display criminal image dynamically -->
+            <img src="/images/<%= criminal.image %>" alt="<%= criminal.name %>'s Image">
+            <div class="confidential-stamp">Under Arrest</div>
+        </div>
+        <div class="details-container">
+            <div class="highlight-box">
+                <div class="details">
+                    <!-- Criminal info dynamically populated -->
+                    <h1 data-text="<%= criminal.name %>"><%= criminal.name %></h1>
+                    <p><span>DoB:</span> <%= criminal.dob %></p>
+                    <p><span>Age:</span> <%= criminal.age %></p>
+                    <p><span>Alias:</span> <%= criminal.alias %></p>
+                    <p><span>Crimes:</span> <%= criminal.crimes %></p>
+                    <p><span>Last Known Location:</span> <%= criminal.lastKnownLocation %></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const matrixChars = "01";
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+
+        const drops = [];
+        for (let x = 0; x < columns; x++) {
+            drops[x] = 1;
+        }
+
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "#0f0";
+            ctx.font = fontSize + "px monospace";
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 50);
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+
+</body>
+</html>
