@@ -175,10 +175,3 @@ If this project helped you, please consider giving the repo a **star** ⭐ — i
 ```
 
 ---
-
-If you want, I can also make:  
-✅ A **dark hacker-style README**  
-✅ A **student-friendly README**  
-✅ Add badges (Python, Tkinter, MySQL, License, etc.)  
-Just tell me!
-```
