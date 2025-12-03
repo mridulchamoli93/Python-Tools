@@ -1,6 +1,4 @@
-Here is a **professional, clean, GitHub-ready `README.md`** specifically for your **Sorting Visualization Project**, based on the files you listed.
 
-You can paste this directly into your GitHub repo.
 
 ---
 
