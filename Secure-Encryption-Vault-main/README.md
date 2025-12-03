@@ -1,6 +1,3 @@
-Here is a **professional, clean, GitHub-ready `README.md`** for your login-registration Python GUI project, including folder instructions and requirements.
-
-You can **copy–paste this directly** into your repository.
 
 ---
 
