@@ -1,80 +1,180 @@
-# Python Shell
 
-A simple yet powerful shell built in Python, designed to execute common shell commands with added features like colored output, error handling, and ASCII art.
+---
 
-## Table of Contents
+```md
+# 🐚 Thanatos Python Shell  
+A simple yet powerful shell built in Python, designed to execute standard shell commands with enhanced features such as **colored output**, **error handling**, **ASCII art**, and **custom command processing**.
+
+---
+
+## 🖼️ Images / Assets
+
+Place all shell-related images inside a folder named:
+
+```
+
+images/
+
+````
+
+This will keep the project organized and compatible with the UI/theme you may add later.
+
+---
+
+## 📑 Table of Contents
 - [Installation](#installation)
 - [Usage](#usage)
 - [Features](#features)
 - [Contributing](#contributing)
-- [License](#license)
 - [Contact](#contact)
 
-## Installation
+---
 
-To install the necessary dependencies, ensure you have Python installed and run:
+## ⚙️ Installation
 
-bash
+Ensure you have Python installed, then install the required dependencies:
+
+```bash
 pip install -r requirements.txt
+````
 
-Usage
-To start the shell, simply run the Python script:
+---
 
+## ▶️ Usage
 
+Run the shell using:
+
+```bash
 python shell.py
-You'll see a prompt displaying your current working directory followed by a $, ready to accept commands.
+```
 
-Features
-Basic Shell Prompt
-Displays the current working directory followed by a $ prompt for user input.
-Command Execution
-cd: Change the current working directory.
-ls: List the contents of the current directory, with output in green.
-pwd: Print the current working directory.
-cat: Concatenate and display the contents of specified files.
-mkdir: Create a new directory.
-grep: Search for a pattern within specified files and display matching lines.
-rm: Remove specified files or directories.
-cp: Copy files or directories from a source to a destination.
-mv: Move or rename files or directories.
-head: Display the first few lines of a specified file.
-tail: Display the last few lines of a specified file.
-Error Handling
-Provides informative error messages for issues such as missing files, incorrect arguments, or permission problems.
-Colored Output
-Uses ANSI escape codes to color the text output:
-Green: Directory contents (ls output).
-Red: Error messages.
-Blue: Current working directory.
-Cyan: ASCII art display.
-Yellow: Exit messages.
-ASCII Art Display
-Uses pyfiglet to print ASCII art text ("Thanatos") when the shell starts, enhancing the visual appeal.
-External Command Execution
-Executes external commands using subprocess.run(), allowing the shell to run system commands and scripts.
-Command Handling
-Splits user input into commands and arguments, then executes built-in or external commands accordingly.
-Graceful Exit
-Exits the shell with a delay when the user types exit, allowing a smooth shutdown process.
-Input Validation
-Checks if the required arguments are provided for each command and gives feedback if they are missing or incorrect.
-Contributing
-Contributions are welcome! Please fork the repository, make your changes, and submit a pull request.
+Once launched, you will see a prompt like:
 
+```
+/current/directory $
+```
 
-Contact
-For questions, issues, or suggestions, please contact [Mridul chamoli] at [mridulchamoli93@gmail.com].
+You can now enter commands as you would in a standard shell.
 
-Feel free to replace `[Mridul Chamoli]` and `[mridulchamoli93@gmail.com]` with your actual contact information. This template should give a clear overview of your project and guide users through installation and usage.
+---
 
+## ⭐ Features
 
-![image](https://github.com/user-attachments/assets/d60185c8-ed35-4dba-bc07-a0c14d8d6d09)
+### 🔹 Basic Shell Prompt
 
+* Displays the **current working directory** followed by a `$` symbol.
 
+### 🔹 Built-in Command Execution
 
+The shell supports several core commands:
 
+| Command | Description                           |
+| ------- | ------------------------------------- |
+| `cd`    | Change directory                      |
+| `ls`    | List files/directories (green output) |
+| `pwd`   | Print current directory               |
+| `cat`   | Display file content                  |
+| `mkdir` | Create a directory                    |
+| `grep`  | Search text pattern inside files      |
+| `rm`    | Delete files or folders               |
+| `cp`    | Copy files/directories                |
+| `mv`    | Move or rename files                  |
+| `head`  | Show first N lines of file            |
+| `tail`  | Show last N lines of file             |
 
+---
 
+### 🔹 Error Handling
 
+* Detects missing files
+* Invalid arguments
+* Permission issues
+* Provides **clear, colored error messages**
+
+---
+
+### 🎨 Colored Output
+
+ANSI colors are used for better readability:
+
+* **Green** → `ls` output
+* **Red** → error messages
+* **Blue** → current working directory
+* **Cyan** → ASCII art (pyfiglet)
+* **Yellow** → exit messages
+
+---
+
+### 🔹 ASCII Art Banner
+
+Displays a **Thanatos ASCII Art** using `pyfiglet` when the shell starts, giving it a professional/hacker-style look.
+
+---
+
+### 🔹 External Command Execution
+
+If a command is not recognized as built-in, the shell attempts to run it as a **system command** using:
+
+```
+subprocess.run()
+```
+
+This allows:
+
+* Running scripts
+* Launching programs
+* Executing system utilities
+
+---
+
+### 🔹 Smart Command Handling
+
+* Splits user input into **command + arguments**
+* Automatically matches built-in or external commands
+* Handles invalid syntax gracefully
+
+---
+
+### 🔹 Graceful Exit
+
+Typing:
+
+```
+exit
+```
+
+Shows a styled exit message and shuts down with a smooth delay.
+
+---
+
+### 🔹 Input Validation
+
+Ensures the user provides correct arguments:
+
+* Missing file names
+* Unsupported flags
+* Invalid directories
+
+Shell responds with meaningful feedback instead of failing silently.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome!
+To contribute:
+
+1. Fork the repository
+2. Make changes
+3. Submit a pull request
+
+---
+
+## 📬 Contact
+
+For questions, issues, or suggestions:
+
+**Mridul Chamoli**
+📧 **[mridulchamoli93@gmail.com](mailto:mridulchamoli93@gmail.com)**
 
 
