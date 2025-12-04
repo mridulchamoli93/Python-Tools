@@ -1,6 +1,7 @@
 🚀 Sorting Visualizer & Benchmark (PyQt6)
 
 A modern, optimized, and user-friendly sorting algorithm visualizer + performance benchmark tool, built with PyQt6 and Matplotlib.
+
 <img width="1263" height="797" alt="Screenshot 2025-12-04 124645" src="https://github.com/user-attachments/assets/39f6ef1a-6303-42b6-ac66-61b2b850802b" />
 
 This application provides:
