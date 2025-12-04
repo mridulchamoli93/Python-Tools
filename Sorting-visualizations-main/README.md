@@ -1,153 +1,201 @@
+🚀 Sorting Visualizer & Benchmark (PyQt6)
 
+A modern, optimized, and user-friendly sorting algorithm visualizer + performance benchmark tool, built with PyQt6 and Matplotlib.
+<img width="1263" height="797" alt="Screenshot 2025-12-04 124645" src="https://github.com/user-attachments/assets/39f6ef1a-6303-42b6-ac66-61b2b850802b" />
 
----
+This application provides:
 
-```md
-# 📊 Sorting Visualization Tool (Python + Tkinter + Matplotlib)
+📊 Real-time sorting animations
 
-A fully interactive **Sorting Algorithm Visualization Tool** designed to help students and developers understand how sorting algorithms work step-by-step.  
-This project includes animated visual graphs, sorting speed comparison, and a user-friendly Tkinter interface.
+⚡ Accurate performance benchmarking using time.perf_counter()
 
----
+🖥️ Clean PyQt6 UI with interactive controls
 
-## 🚀 Features
+📈 Line & Bar charts for comparing algorithms
 
-- 🎥 **Real-time sorting animations**
-- 🔢 Visualizes comparison-based algorithms  
-- 📈 Supports both **Bar Graph** & **Line Graph** views  
-- 🧮 Adjustable data size & speed  
-- 📝 Generate, edit & save custom number lists  
-- 🖼 Clean UI with icons and images  
-- 🔧 Organized code: modularized sorting methods & graph classes
+🔧 Supports Quick Sort, Insertion Sort & Bubble Sort
 
----
+🔁 Sorted / Reversed / Shuffled list generation
 
-## 📁 Project Structure
+🔄 No file I/O — everything is in-memory and fast
 
-```
+🎨 Matplotlib embedded in a modern UI
 
-📦 Sorting-Visualization
-┣ 📂 images
-┃ ┗ happy.png
-┣ BarGraph.py
-┣ LineGraph.py
-┣ Interface.py
-┣ Sorting_Methods.py
-┣ Sorting_Visualization.py
-┣ ListMaker_Saver.py
-┣ List_Number.txt
-┣ Main.py
-┗ README.md
+📦 Features
+✅ 1. Sorting Algorithm Animation
 
-```
+Watch how each algorithm sorts step-by-step:
 
----
+Quick Sort (recursive generator)
 
-## 📦 Requirements
+Insertion Sort
 
-Install these dependencies before running:
+Bubble Sort
 
-```
+Animation uses:
 
-tkinter
+Efficient Python generators
+
+Qt’s non-blocking QTimer
+
+Smooth bar updates in Matplotlib
+
+✅ 2. Benchmark Multiple Algorithms
+
+Compare execution time of selected algorithms across input sizes.
+
+You can configure:
+
+Start size
+
+End size
+
+Step
+
+Data order: Sorted / Reversed / Shuffled
+
+Output:
+
+Line graph of time vs. input size
+
+Average execution time
+
+Clean status summary
+
+✅ 3. Single-Run Mode
+
+Benchmark selected algorithms on a single list size and view results as a bar chart.
+
+✅ 4. Modern PyQt6 Interface
+
+The UI includes:
+
+Parameter controls
+
+Algorithm selectors
+
+Animation settings
+
+Matplotlib canvas
+
+Live status updates
+
+🛠️ Installation
+Requirements
+Python 3.8+
+PyQt6
 matplotlib
-os
+numpy
 
-````
+Install dependencies:
+pip install pyqt6 matplotlib numpy
 
-Install matplotlib:
+▶️ Running the Application
 
-```bash
-pip install matplotlib
-````
+Save your main file as:
 
-Tkinter comes pre-installed with Python on most systems.
+sorting_gui_pyqt6.py
 
----
 
-## 🔧 How It Works
+Run using:
 
-### **1. User selects:**
+python sorting_gui_pyqt6.py
 
-* Sorting algorithm
-* Data set size
-* Visualization mode (Bar / Line)
-* Sorting speed
+📁 Project Structure (single-file version)
+sorting_gui_pyqt6.py  # main PyQt6 application
 
-### **2. The program:**
 
-* Generates or loads a list
-* Animates the sorting process
-* Shows each step visually
+If needed, this can be modularized later into:
 
-### **3. Additional tools:**
+/src
+   /ui
+   /algorithms
+   /visualizers
+   /plots
 
-* Custom list creation (via `ListMaker_Saver.py`)
-* Saved list stored in `List_Number.txt`
+🧠 Algorithms Included
+Quick Sort
 
----
+In-place
 
-## 📊 Supported Sorting Algorithms
+Lomuto partition scheme
 
-* Bubble Sort
-* Selection Sort
-* Insertion Sort
-* Merge Sort
-* Quick Sort
-  *(More can be added inside `Sorting_Methods.py`)*
+Recursive generator for animation
 
----
+Insertion Sort
 
-## ▶️ How to Run
+Efficient for small or nearly-sorted lists
 
-Simply run:
+Smooth animation
 
-```bash
-python Main.py
-```
+Bubble Sort
 
-This starts the full visualization interface.
+Classic comparison sort
 
----
+Early exit optimization
 
-## 🧩 File Descriptions
+🖼️ Visualization
 
-| File                       | Description                               |
-| -------------------------- | ----------------------------------------- |
-| `Main.py`                  | Launches the main application UI          |
-| `Interface.py`             | Handles GUI layout and user controls      |
-| `Sorting_Methods.py`       | All sorting algorithms stored here        |
-| `BarGraph.py`              | Bar chart animation class                 |
-| `LineGraph.py`             | Line chart animation class                |
-| `Sorting_Visualization.py` | Connects algorithms with graph animations |
-| `ListMaker_Saver.py`       | Create & save custom number lists         |
-| `List_Number.txt`          | Stores saved list data                    |
-| `happy.png`                | UI icon / decoration                      |
+Uses Matplotlib bar charts for animations
 
----
+Line & bar charts embedded in PyQt6
 
-## 🎯 Purpose
+Responsive redrawing with tight_layout=True
 
-This project is ideal for:
+Auto-adjusted Y-axis
 
-* Students learning algorithms
-* Teachers demonstrating sorting visually
-* Developers understanding algorithm performance
-* Anyone who prefers graphical learning
+⚙️ Performance Optimizations
 
----
+✔ No file reads/writes (old project version used .txt logs)
+✔ time.perf_counter() for high-precision timing
+✔ Array copies handled per-algorithm to prevent contamination
+✔ Minimised redraw overhead
+✔ Simplified and optimized generator logic
 
-## 🤝 Contributing
+🧩 Controls Overview
+Array Generation
 
-Feel free to open **issues**, **pull requests**, or suggest new sorting algorithms.
+Start size
 
----
+End size
 
-## ⭐ Support
+Step
 
-If you like this project, please give it a **star** ⭐ on GitHub — it really helps!
+Order: sorted / reversed / shuffled
 
-```
+Algorithm Select
 
-Just tell me!
-```
+Quick Sort
+
+Insertion Sort
+
+Bubble Sort
+
+Single Mode
+
+N (list size)
+
+Bar chart output
+
+Shows execution time
+
+Animation Mode
+
+Speed (ms/frame)
+
+Algorithm selection
+
+Start/Stop toggle
+
+📊 Example Outputs
+🔹 Bar Chart (single run)
+
+Shows time taken by each selected algorithm.
+
+🔹 Line Graph (comparison)
+
+Plots execution time across increasing input sizes.
+
+🔹 Animation
+
+Live bar-graph visualization of the sorting process.
