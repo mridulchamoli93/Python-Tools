@@ -1,179 +1,466 @@
-import tkinter as tk
-from tkinter import filedialog, scrolledtext, messagebox
-from PIL import Image, ImageTk
-import hashlib
+import sys
 import os
+import io
 import threading
+import hashlib
+import webbrowser
+from datetime import datetime
+from pathlib import Path
+
 import requests
 from bs4 import BeautifulSoup
-import webbrowser
+from PIL import Image, ImageDraw, ImageOps
 
-# Tor proxy configuration
+from PyQt6.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+    QPushButton, QLineEdit, QTextEdit, QFileDialog, QProgressBar, QMessageBox,
+    QSizePolicy, QFrame, QSpacerItem
+)
+from PyQt6.QtGui import QPixmap, QIcon, QAction, QCursor, QTextCursor
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
+
+# ---------- Config ----------
+DEFAULT_AVATAR = "67344c876c473c001d68c123.jpg"  # file you said is in repo
 PROXIES = {
     'http': 'socks5h://127.0.0.1:9050',
     'https': 'socks5h://127.0.0.1:9050'
 }
+HTTP_TIMEOUT = 18
 
-# Search using DuckDuckGo onion service
-def search_dark_web(keyword):
+# ---------- Utility: circular avatar + neon ring ----------
+def make_circular_avatar_bytes(image_path: str, size: int = 140, ring_color=(30,200,255,220), ring_width: int = 6):
+    """
+    Returns PNG bytes of a circular-masked avatar with a neon ring.
+    """
+    # load image
     try:
-        url = f"https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/html?q={keyword}"
-        headers = {"User-Agent": "DarkWebHunter/1.0"}
-        response = requests.get(url, proxies=PROXIES, headers=headers, timeout=20)
-        soup = BeautifulSoup(response.text, "html.parser")
+        img = Image.open(image_path).convert("RGBA")
+    except Exception:
+        img = Image.new("RGBA", (size, size), (12, 18, 28, 255))
 
-        results = []
-        for result in soup.find_all('a', class_='result__a'):
-            title = result.get_text()
-            link = result.get('href')
-            results.append(f"• {title}\n🔗 {link}\n")
-        
-        return "\n".join(results) if results else "[×] No readable results found."
-    except Exception as e:
-        return f"[×] Error: Could not connect to .onion site.\nDetails: {e}"
+    # crop to square and resize
+    w, h = img.size
+    side = min(w, h)
+    left = (w - side) // 2
+    top = (h - side) // 2
+    img = img.crop((left, top, left+side, top+side)).resize((size, size), Image.LANCZOS)
 
-# Hash image
-def get_image_hash(filepath):
-    try:
-        with open(filepath, 'rb') as f:
-            data = f.read()
-        return hashlib.sha256(data).hexdigest()
-    except Exception as e:
-        return f"[×] Failed to hash image: {e}"
+    # circular mask
+    mask = Image.new("L", (size, size), 0)
+    draw = ImageDraw.Draw(mask)
+    draw.ellipse((0, 0, size-1, size-1), fill=255)
+    img.putalpha(mask)
 
-# Save results
-def save_results_to_file(data):
-    with open("search_results.txt", "w") as f:
-        f.write(data)
-    messagebox.showinfo("Success", "Results have been saved to 'search_results.txt'.")
+    # neon ring overlay
+    ring = Image.new("RGBA", (size, size), (0,0,0,0))
+    rdraw = ImageDraw.Draw(ring)
 
-# Show related images
-def show_related_images(keyword):
-    search_url = f"https://duckduckgo.com/?q={keyword}+images&t=h_&iar=images&iax=images&ia=images"
-    webbrowser.open(search_url)
+    # outer glow - multiple faint ellipses
+    for i, a in enumerate((80, 48, 28)):
+        alpha = int(a)
+        col = (ring_color[0], ring_color[1], ring_color[2], alpha)
+        extra = i * 2
+        rdraw.ellipse((extra, extra, size-1-extra, size-1-extra), outline=col, width=1)
 
-# Simulate image display
-def display_images(images, image_label):
-    for img_path in images:
+    inset = ring_width//2 + 2
+    rdraw.ellipse((inset, inset, size - inset - 1, size - inset - 1), outline=ring_color, width=ring_width)
+
+    out = Image.alpha_composite(img, ring)
+
+    bio = io.BytesIO()
+    out.save(bio, format="PNG")
+    bio.seek(0)
+    return bio.read()
+
+def qpixmap_from_bytes(png_bytes):
+    pix = QPixmap()
+    pix.loadFromData(png_bytes)
+    return pix
+
+# ---------- Worker thread for searching ----------
+class SearchWorker(QThread):
+    finished = pyqtSignal(str)
+    error = pyqtSignal(str)
+
+    def __init__(self, keyword: str, use_tor=True):
+        super().__init__()
+        self.keyword = keyword
+        self.use_tor = use_tor
+
+    def run(self):
         try:
-            image = Image.open(img_path)
-            image = image.resize((150, 150))
-            image_tk = ImageTk.PhotoImage(image)
-            image_label.config(image=image_tk)
-            image_label.image = image_tk
-            break
+            onion_url = f"https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/html?q={self.keyword}"
+            headers = {"User-Agent": "PyQt-DarkHunter/1.0"}
+            if self.use_tor:
+                try:
+                    resp = requests.get(onion_url, proxies=PROXIES, headers=headers, timeout=HTTP_TIMEOUT)
+                except Exception:
+                    fallback = f"https://html.duckduckgo.com/html/?q={self.keyword}"
+                    resp = requests.get(fallback, headers=headers, timeout=HTTP_TIMEOUT)
+            else:
+                fallback = f"https://html.duckduckgo.com/html/?q={self.keyword}"
+                resp = requests.get(fallback, headers=headers, timeout=HTTP_TIMEOUT)
+
+            soup = BeautifulSoup(resp.text, "html.parser")
+            results = []
+            anchors = soup.find_all("a")
+            for a in anchors:
+                txt = a.get_text(strip=True)
+                href = a.get("href", "")
+                if not txt:
+                    continue
+                if len(txt) < 8:
+                    continue
+                results.append(f"• {txt}\n  ➜ {href}")
+                if len(results) >= 12:
+                    break
+            if not results:
+                out = "[×] No readable results found (page structure may differ)."
+            else:
+                out = "\n\n".join(results)
+            self.finished.emit(out)
         except Exception as e:
-            print(f"[×] Error: Could not display image: {e}")
+            self.error.emit(str(e))
 
-# Threaded search
-def threaded_search(keyword, output_box, spinner_label, image_label):
-    spinner_label.config(text="🔄 Loading...")
-    output_box.insert(tk.END, f"\n[🔍] Searching: {keyword}\n", 'bold_green')
-    result = search_dark_web(keyword)
-    output_box.insert(tk.END, f"{result}\n", 'normal')
-    spinner_label.config(text="")
+# ---------- Main Window ----------
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("NightVault — PyQt6 Hunter")
+        self.resize(1120, 720)
+        self._central = QWidget()
+        self.setCentralWidget(self._central)
+        self._build_ui()
+        self._apply_dark_theme()
 
-    # Dummy local image paths (you can add your own)
-    display_images(['abc.jpeg'], image_label)
+        # try to load default avatar
+        self.current_avatar_path = DEFAULT_AVATAR if Path(DEFAULT_AVATAR).exists() else None
+        self._load_avatar(self.current_avatar_path)
+        self.search_thread = None
 
-# GUI function
-def run_gui():
-    def on_search():
-        keyword = keyword_entry.get().strip()
+    def _build_ui(self):
+        root = QHBoxLayout()
+        self._central.setLayout(root)
+
+        # Sidebar (left)
+        sidebar = QFrame()
+        sidebar.setFixedWidth(240)
+        sidebar.setStyleSheet("background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #06101a, stop:1 #071018);")
+        v = QVBoxLayout(sidebar)
+        v.setContentsMargins(16, 16, 16, 16)
+        v.setSpacing(10)
+
+        self.avatar_label = QLabel()
+        self.avatar_label.setFixedSize(120, 120)
+        self.avatar_label.setStyleSheet("border-radius:60px;")
+        self.avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        v.addWidget(self.avatar_label, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+        title = QLabel("NightVault Hunter")
+        title.setStyleSheet("color: #9fdcff; font-weight:700; font-size:16px;")
+        v.addWidget(title, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+        v.addSpacing(8)
+
+        # Theme toggle
+        self.theme_btn = QPushButton("Toggle Light/Dark")
+        self.theme_btn.clicked.connect(self._toggle_theme)
+        v.addWidget(self.theme_btn)
+
+        # Quick buttons
+        self.btn_search_tab = QPushButton("New Search")
+        self.btn_search_tab.clicked.connect(lambda: self._focus_search())
+        self.btn_upload = QPushButton("Upload Image")
+        self.btn_upload.clicked.connect(self._on_upload)
+        self.btn_save = QPushButton("Save Results")
+        self.btn_save.clicked.connect(self._save_results)
+        self.btn_open_images = QPushButton("Image Search")
+        self.btn_open_images.clicked.connect(lambda: self._open_image_search(self.search_input.text().strip()))
+
+        for btn in (self.btn_search_tab, self.btn_upload, self.btn_save, self.btn_open_images):
+            btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+            btn.setMinimumHeight(36)
+            v.addWidget(btn)
+
+        v.addStretch()
+        self.status_label = QLabel("Ready")
+        self.status_label.setStyleSheet("color: #8fbfdc;")
+        v.addWidget(self.status_label)
+
+        root.addWidget(sidebar)
+
+        # Main area (right)
+        main_frame = QFrame()
+        main_layout = QVBoxLayout(main_frame)
+        main_layout.setContentsMargins(12,12,12,12)
+        main_layout.setSpacing(8)
+
+        # Top: search bar
+        top = QHBoxLayout()
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Enter keyword or phrase...")
+        self.search_input.returnPressed.connect(self._start_search)
+        top.addWidget(self.search_input)
+
+        self.search_button = QPushButton("Search")
+        self.search_button.clicked.connect(self._start_search)
+        top.addWidget(self.search_button)
+
+        self.spinner_label = QLabel("")  # animated text spinner
+        top.addWidget(self.spinner_label)
+        main_layout.addLayout(top)
+
+        # Middle: split - left output, right preview
+        mid = QHBoxLayout()
+
+        # Output text
+        self.output = QTextEdit()
+        self.output.setReadOnly(True)
+        self._log(f"[{datetime.utcnow().isoformat()}] App started. Ready.\n")
+        mid.addWidget(self.output, 3)
+
+        # Right column - preview and details
+        right_col = QVBoxLayout()
+        self.preview_title = QLabel("Preview")
+        right_col.addWidget(self.preview_title, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+        self.preview_label = QLabel()
+        self.preview_label.setFixedSize(260, 260)
+        self.preview_label.setStyleSheet("border-radius:8px; background: rgba(8,12,20,0.6);")
+        self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        right_col.addWidget(self.preview_label, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+        self.hash_label = QLabel("SHA-256: —")
+        self.hash_label.setWordWrap(True)
+        right_col.addWidget(self.hash_label)
+
+        btns = QHBoxLayout()
+        self.preview_upload_btn = QPushButton("Upload")
+        self.preview_upload_btn.clicked.connect(self._on_upload)
+        self.preview_open_btn = QPushButton("Open Images")
+        self.preview_open_btn.clicked.connect(lambda: self._open_image_search(self.search_input.text().strip()))
+        btns.addWidget(self.preview_upload_btn)
+        btns.addWidget(self.preview_open_btn)
+        right_col.addLayout(btns)
+        right_col.addStretch()
+
+        self.copy_btn = QPushButton("Copy Output")
+        self.copy_btn.clicked.connect(self._copy_output)
+        right_col.addWidget(self.copy_btn)
+
+        mid.addLayout(right_col, 1)
+
+        main_layout.addLayout(mid)
+
+        # Bottom: progress bar and footer
+        bottom = QHBoxLayout()
+        self.progress = QProgressBar()
+        self.progress.setRange(0, 100)
+        self.progress.setValue(0)
+        bottom.addWidget(self.progress)
+        self.save_btn = QPushButton("Save Log")
+        self.save_btn.clicked.connect(self._save_results)
+        bottom.addWidget(self.save_btn)
+        main_layout.addLayout(bottom)
+
+        root.addWidget(main_frame, 1)
+
+        # Drag & drop onto preview_label
+        self.preview_label.setAcceptDrops(True)
+        self.preview_label.installEventFilter(self)
+
+    # ---------- Drag & Drop ----------
+    def eventFilter(self, obj, event):
+        if obj is self.preview_label:
+            if event.type() == event.Type.DragEnter:
+                if event.mimeData().hasUrls():
+                    event.accept()
+                    return True
+            if event.type() == event.Type.Drop:
+                urls = event.mimeData().urls()
+                if urls:
+                    path = urls[0].toLocalFile()
+                    self._set_preview_image(path)
+                event.accept()
+                return True
+        return super().eventFilter(obj, event)
+
+    # ---------- Theming ----------
+    def _apply_dark_theme(self):
+        self.setStyleSheet("""
+            QMainWindow { background: #051018; }
+            QTextEdit { background: #071018; color: #dfefff; border: 1px solid rgba(255,255,255,0.05); }
+            QLineEdit { background: #08121a; color: #dfefff; padding: 6px; border-radius: 6px; }
+            QPushButton { background: #0b1720; color: #e8fbff; padding: 6px; border-radius:6px; border: 1px solid rgba(110,232,255,0.12); }
+            QLabel { color: #cfeefe; }
+            QProgressBar { height: 12px; border-radius:6px; background: #031016; color: #dff6ff; }
+        """)
+
+    def _apply_light_theme(self):
+        self.setStyleSheet("""
+            QMainWindow { background: #f6fbff; }
+            QTextEdit { background: #ffffff; color: #042029; border: 1px solid rgba(0,0,0,0.06); }
+            QLineEdit { background: #fff; color: #042029; padding: 6px; border-radius: 6px; }
+            QPushButton { background: qlineargradient(x1:0,y1:0,x2:1,y2:1,stop:0 #e8faff, stop:1 #dff6ff); color: #022; padding: 6px; border-radius:6px; }
+            QLabel { color: #042029; }
+            QProgressBar { height: 12px; border-radius:6px; background: #e8f8ff; color: #022; }
+        """)
+
+    def _toggle_theme(self):
+        current = getattr(self, "_light", False)
+        if current:
+            self._apply_dark_theme()
+            self._light = False
+            self._log("[INFO] Switched to Dark theme")
+        else:
+            self._apply_light_theme()
+            self._light = True
+            self._log("[INFO] Switched to Light theme")
+
+    # ---------- Avatar / preview ----------
+    def _load_avatar(self, path):
+        if not path:
+            b = make_circular_avatar_bytes("", size=140)
+        else:
+            b = make_circular_avatar_bytes(path, size=140)
+        pix = qpixmap_from_bytes(b).scaled(120, 120, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        self.avatar_label.setPixmap(pix)
+        p2 = qpixmap_from_bytes(b).scaled(260, 260, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        self.preview_label.setPixmap(p2)
+
+    def _set_preview_image(self, path):
+        self.current_avatar_path = path
+        try:
+            b = make_circular_avatar_bytes(path, size=260, ring_color=(30,200,255,200), ring_width=8)
+            pix = qpixmap_from_bytes(b).scaled(260, 260, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            self.preview_label.setPixmap(pix)
+            b2 = make_circular_avatar_bytes(path, size=120, ring_color=(30,200,255,200), ring_width=6)
+            pix2 = qpixmap_from_bytes(b2).scaled(120, 120, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            self.avatar_label.setPixmap(pix2)
+            h = self._compute_hash(path)
+            self.hash_label.setText(f"SHA-256: {h}")
+            self._log(f"[{datetime.utcnow().isoformat()}] Uploaded {os.path.basename(path)}\nHash: {h}\n")
+        except Exception as e:
+            self._log(f"[WARN] Could not set preview: {e}")
+
+    def _compute_hash(self, path):
+        try:
+            h = hashlib.sha256()
+            with open(path, "rb") as f:
+                for chunk in iter(lambda: f.read(8192), b""):
+                    h.update(chunk)
+            return h.hexdigest()
+        except Exception as e:
+            return f"err:{e}"
+
+    # ---------- Search flow ----------
+    def _focus_search(self):
+        self.search_input.setFocus()
+
+    def _start_search(self):
+        keyword = self.search_input.text().strip()
         if not keyword:
-            output_box.insert(tk.END, "[!] Enter a keyword first.\n")
+            QMessageBox.warning(self, "Empty", "Please enter a search keyword.")
             return
-        search_thread = threading.Thread(target=threaded_search, args=(keyword, output_box, spinner_label, image_label))
-        search_thread.start()
+        self._set_busy(True)
+        self.progress.setValue(0)
+        self._start_spinner()
+        self.search_thread = SearchWorker(keyword, use_tor=True)
+        self.search_thread.finished.connect(self._on_search_finished)
+        self.search_thread.error.connect(self._on_search_error)
+        self.search_thread.start()
+        self._log(f"[{datetime.utcnow().isoformat()}] Searching for: {keyword}")
 
-    def on_upload():
-        filepath = filedialog.askopenfilename(filetypes=[("Image Files", "*.jpg *.jpeg *.png *.bmp")])
-        if filepath:
-            hash_val = get_image_hash(filepath)
-            output_box.insert(tk.END, f"\n[📁] Image: {os.path.basename(filepath)}\n[🔑] SHA-256 Hash:\n{hash_val}\n", 'bold_green')
-            output_box.insert(tk.END, "[~] (Simulated) Searching image hash on dark web...\n", 'normal')
-        else:
-            output_box.insert(tk.END, "[!] No image selected.\n", 'warning')
+    def _on_search_finished(self, text):
+        self._stop_spinner()
+        self._set_busy(False)
+        self.progress.setValue(100)
+        snippet = f"\n[RESULTS @ {datetime.utcnow().isoformat()}]\n{text}\n\n"
+        self._log(snippet)
+        self.status_label.setText("Search complete")
 
-    def on_save():
-        data = output_box.get("1.0", tk.END)
-        if data.strip():
-            save_results_to_file(data)
-        else:
-            messagebox.showwarning("No Data", "No data to save.")
+    def _on_search_error(self, message):
+        self._stop_spinner()
+        self._set_busy(False)
+        self.progress.setValue(0)
+        self._log(f"[ERROR] {message}\n")
+        QMessageBox.critical(self, "Search error", message)
+        self.status_label.setText("Error")
 
-    def on_show_images():
-        keyword = keyword_entry.get().strip()
-        if keyword:
-            show_related_images(keyword)
-        else:
-            messagebox.showwarning("No Keyword", "Please enter a keyword to search for related images.")
+    # ---------- Spinner animation (text) ----------
+    def _start_spinner(self):
+        self._spinner_tick = 0
+        self._spinner_timer = QTimer()
+        self._spinner_timer.timeout.connect(self._spinner_frame)
+        self._spinner_timer.start(200)
 
-    root = tk.Tk()
-    root.title("🕶️ Dark Web Hunter")
-    root.geometry("920x800")
-    root.configure(bg="#111111")
+    def _spinner_frame(self):
+        self._spinner_tick = (self._spinner_tick + 1) % 6
+        dots = "." * (self._spinner_tick % 4)
+        self.spinner_label.setText(f"Searching{dots}")
 
-    # Load and display logo
-    try:
-        logo_image = Image.open("abc.jpeg")
-        logo_image = logo_image.resize((120, 120))
-        logo_photo = ImageTk.PhotoImage(logo_image)
-        logo_label = tk.Label(root, image=logo_photo, bg="#0d0d0d")
-        logo_label.image = logo_photo
-        logo_label.pack(pady=(10, 5))
-    except Exception as e:
-        print(f"[×] Error loading logo: {e}")
+    def _stop_spinner(self):
+        if hasattr(self, "_spinner_timer"):
+            self._spinner_timer.stop()
+            self.spinner_label.setText("")
 
-    # Fonts and palette
-    font_header = ("Courier New", 14, "bold")
-    font_text = ("Courier New", 10)
-    root.tk_setPalette(background="#0d0d0d", foreground="#00ff00")
+    def _set_busy(self, busy: bool):
+        for w in (self.search_button, self.btn_upload, self.btn_search_tab, self.btn_save, self.btn_open_images, self.preview_upload_btn, self.preview_open_btn):
+            w.setDisabled(busy)
 
-    # App Title
-    app_title = tk.Label(root, text="Dark Web Hunter", font=("Courier New", 18, "bold"), fg="#00ff00", bg="#0d0d0d")
-    app_title.pack(pady=10)
+    # ---------- File / preview actions ----------
+    def _on_upload(self):
+        fname, _ = QFileDialog.getOpenFileName(self, "Choose an image", "", "Images (*.png *.jpg *.jpeg *.bmp)")
+        if not fname:
+            return
+        self._set_preview_image(fname)
 
-    # Entry field
-    keyword_entry = tk.Entry(root, width=60, font=font_text, bg="#222222", fg="#00ff00",
-                             insertbackground="#00ff00", bd=0, highlightthickness=1, highlightcolor="#00ff00")
-    keyword_entry.pack(pady=10)
+    def _open_image_search(self, keyword):
+        if not keyword:
+            QMessageBox.information(self, "No keyword", "Enter a keyword to open image search.")
+            return
+        url = f"https://duckduckgo.com/?q={keyword}+images&t=h_&iar=images&iax=images&ia=images"
+        webbrowser.open(url)
 
-    # Buttons
-    btn_frame = tk.Frame(root, bg="#0d0d0d")
-    btn_frame.pack(pady=15)
+    def _save_results(self):
+        txt = self.output.toPlainText().strip()
+        if not txt:
+            QMessageBox.information(self, "No results", "There's no output to save.")
+            return
+        fname, _ = QFileDialog.getSaveFileName(self, "Save results", "search_results.txt", "Text files (*.txt)")
+        if not fname:
+            return
+        with open(fname, "w", encoding="utf-8") as f:
+            f.write(txt)
+        QMessageBox.information(self, "Saved", f"Saved to {fname}")
 
-    style_btn = {
-        "font": font_text, "bg": "#00ff00", "fg": "#000000",
-        "activebackground": "#33ff33", "activeforeground": "#000000",
-        "relief": tk.FLAT, "width": 15, "highlightthickness": 0
-    }
+    def _copy_output(self):
+        txt = self.output.toPlainText()
+        if txt:
+            QApplication.clipboard().setText(txt)
+            self._log("[INFO] Output copied to clipboard.\n")
 
-    tk.Button(btn_frame, text="Search Keyword", command=on_search, **style_btn).pack(side=tk.LEFT, padx=10)
-    tk.Button(btn_frame, text="Upload Image", command=on_upload, **style_btn).pack(side=tk.LEFT, padx=10)
-    tk.Button(btn_frame, text="Save Results", command=on_save, **style_btn).pack(side=tk.LEFT, padx=10)
-    tk.Button(btn_frame, text="Show Related Images", command=on_show_images, **style_btn).pack(side=tk.LEFT, padx=10)
+    # ---------- Logging helper (fixed for PyQt6) ----------
+    def _log(self, text):
+        """
+        Append text to the output QTextEdit safely in PyQt6.
+        """
+        cursor = self.output.textCursor()
+        # move to end using QTextCursor MoveOperation (PyQt6)
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        self.output.setTextCursor(cursor)
+        # insert text
+        self.output.insertPlainText(text + ("\n" if not text.endswith("\n") else ""))
+        self.output.ensureCursorVisible()
 
-    # Spinner label
-    spinner_label = tk.Label(root, text="", font=font_header, fg="#00ff00", bg="#0d0d0d")
-    spinner_label.pack(pady=5)
+# ---------- Entrypoint ----------
+def main():
+    app = QApplication(sys.argv)
+    mw = MainWindow()
+    if Path(DEFAULT_AVATAR).exists():
+        mw._load_avatar(DEFAULT_AVATAR)
+    mw.show()
+    sys.exit(app.exec())
 
-    # Output box
-    output_box = scrolledtext.ScrolledText(root, width=110, height=20, font=font_text, bg="#000000",
-                                           fg="#00ff00", insertbackground="#00ff00", wrap=tk.WORD, borderwidth=0)
-    output_box.pack(padx=15, pady=10)
-
-    # Image preview label
-    image_label = tk.Label(root, bg="#0d0d0d", width=150, height=150)
-    image_label.pack(pady=10)
-
-    # Text styling
-    output_box.tag_configure('bold_green', foreground="#00ff00", font=("Courier New", 10, "bold"))
-    output_box.tag_configure('warning', foreground="#ff0000")
-    output_box.tag_configure('normal', foreground="#00ff00")
-
-    root.mainloop()
-
-# Launch
 if __name__ == "__main__":
-    run_gui()
+    main()
