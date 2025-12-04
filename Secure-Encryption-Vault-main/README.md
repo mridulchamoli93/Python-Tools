@@ -42,7 +42,8 @@ It features smooth UI animations, glowing neon visuals, hacker-style themes, and
 
 Clean and simple, no distractions — the gateway to the vault.
 
-<img width="1546" height="988" alt="Screenshot 2025-12-04 121417" src="https://github.com/user-attachments/assets/b1c70907-392d-4b70-a074-d09aa4bebebd" />
+
+<img width="1589" height="939" alt="Screenshot 2025-12-04 121052" src="https://github.com/user-attachments/assets/bbe15921-5223-400b-bbd3-8cbbe023c331" />
 
 
 ### 2️⃣ **Dashboard**
