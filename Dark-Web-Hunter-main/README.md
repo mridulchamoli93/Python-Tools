@@ -14,14 +14,14 @@ Dark Web Hunter is a Python-based desktop application that enables users to perf
 - Minimal dark-themed GUI built with `tkinter`
 
 ## 🖼️ Preview
-<img width="1135" height="691" alt="Screenshot 2025-12-03 192713" src="https://github.com/user-attachments/assets/429fb665-765a-459a-8d63-601cecd9994a" />
+<img width="1399" height="940" alt="Screenshot 2025-12-04 123111" src="https://github.com/user-attachments/assets/73dab29b-88b4-4ab3-84a9-2cddb7025cd2" />
 
 ## 🔧 Installation
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/DarkWebHunter.git
+git clone https://github.com/mridulchamoli93/Python-Tools/tree/main/Dark-Web-Hunter-main
 cd DarkWebHunter
 2. Install dependencies
 Use pip to install required libraries:
